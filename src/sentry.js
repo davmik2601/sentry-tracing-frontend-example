@@ -1,11 +1,12 @@
 import * as Sentry from '@sentry/react'
+import {config} from './config.js'
 
 /**
  * Initialize Sentry once for the whole app.
  * Call this before React renders.
  */
 export function initSentry() {
-  const dsn = import.meta.env.VITE_SENTRY_DSN
+  const dsn = config.sentryDsn
 
   if (!dsn) {
     // keep app working even if env is missing

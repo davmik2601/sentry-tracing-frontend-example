@@ -1,20 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import * as Sentry from '@sentry/react'
 import { getTraceData } from './sentry.js'
+import {config} from './config.js'
 
 const styles = {
   page: { fontFamily: 'sans-serif', padding: 12 },
   row: { marginBottom: 10 },
   btn: { margin: '6px 6px 6px 0', padding: '6px 11px' },
   pre: {
-    background: '#111',
-    color: '#0f0',
-    padding: 10,
-    borderRadius: 8,
-    maxWidth: 700,
-    height: 260,
-    overflow: 'auto',
-    whiteSpace: 'pre-wrap',
+    background: '#111', color: '#0f0', padding: 10,
+    borderRadius: 8, maxWidth: 700, height: 260,
+    overflow: 'auto', whiteSpace: 'pre-wrap',
   },
 }
 
@@ -24,10 +20,7 @@ export default function App() {
   const [connected, setConnected] = useState(false)
   const [logText, setLogText] = useState('Open this app in browser, click Connect.\n')
 
-  const WS_URL = useMemo(() => {
-    // prefer WS env; fallback to API env if you want to build ws from it
-    return import.meta.env.VITE_WS_URL || 'ws://localhost:3001/ws'
-  }, [])
+  const WS_URL = useMemo(() => config.wsUrl, [])
 
   function log(...args) {
     setLogText((prev) => prev + args.map(String).join(' ') + '\n')
