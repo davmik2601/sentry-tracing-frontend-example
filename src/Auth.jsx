@@ -1,12 +1,12 @@
-import React, { useState } from 'react'
-import * as Sentry from '@sentry/react'
-import { apiRequest } from './http.js'
-import { setToken } from './auth-storage.js'
-import { config } from './config.js'
+import React, {useState} from 'react'
+import {apiRequest} from './http.js'
+import {setToken} from './auth-storage.js'
+import {config} from './config.js'
+import {runSentryNewTrace} from './helpers/run-sentry-new-trace.js'
 
 const styles = {
-  page: { fontFamily: 'sans-serif', padding: 12, maxWidth: 520 },
-  tabs: { display: 'flex', gap: 8, marginBottom: 12 },
+  page: {fontFamily: 'sans-serif', padding: 12, maxWidth: 520},
+  tabs: {display: 'flex', gap: 8, marginBottom: 12},
   tab: (active) => ({
     padding: '8px 12px',
     borderRadius: 8,
@@ -14,12 +14,21 @@ const styles = {
     cursor: 'pointer',
     background: active ? '#eee' : '#fff',
   }),
-  row: { display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 },
-  input: { padding: '8px 10px', borderRadius: 8, border: '1px solid #ccc' },
-  btn: { padding: '9px 12px', borderRadius: 8, border: '1px solid #ccc', cursor: 'pointer' },
-  err: { color: '#b00020', marginTop: 8, whiteSpace: 'pre-wrap' },
+  row: {display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10},
+  input: {padding: '8px 10px', borderRadius: 8, border: '1px solid #ccc'},
+  btn: {padding: '9px 12px', borderRadius: 8, border: '1px solid #ccc', cursor: 'pointer'},
+  err: {color: '#b00020', marginTop: 8, whiteSpace: 'pre-wrap'},
 }
 
+/**
+ * Extract token string from common API response shapes.
+ * @param {{
+ *   token?: string,
+ *   accessToken?: string,
+ *   data?: { token?: string, accessToken?: string }
+ * } | null} data
+ * @return {string}
+ */
 function extractToken(data) {
   // common shapes:
   // {token: '...'} or {accessToken: '...'} or {data:{token:'...'}}
@@ -32,14 +41,14 @@ function extractToken(data) {
   return ''
 }
 
-export default function Auth({ onAuthed }) {
+export default function Auth({onAuthed}) {
   const [tab, setTab] = useState('login') // 'login' | 'register'
   const [err, setErr] = useState('')
 
-  const [reg, setReg] = useState({ name: '', email: '', password: '', age: '' })
-  const [log, setLog] = useState({ email: '', password: '' })
+  const [reg, setReg] = useState({name: '', email: '', password: '', age: ''})
+  const [log, setLog] = useState({email: '', password: ''})
 
-  async function doRegister() {
+  async function register() {
     setErr('')
 
     const payload = {
@@ -49,47 +58,47 @@ export default function Auth({ onAuthed }) {
     }
     if (reg.age !== '') payload.age = Number(reg.age)
 
-    return Sentry.startNewTrace(async () => {
-      try {
-        const data = await Sentry.startSpan(
-          { name: 'auth.register', op: 'ui.action', forceTransaction: true },
-          async () => apiRequest(config.endpoints.register, { method: 'POST', json: payload }),
-        )
+    try {
+      /** here is good to create new Sentry trace for any action */
+      const data = await runSentryNewTrace('auth.login', 'action', () =>
+        apiRequest(config.endpoints.login, {method: 'POST', json: payload}),
+      )
 
-        const token = extractToken(data)
-        if (!token) throw new Error('No token in register response (check backend response shape)')
+      /** but you can simply call apiRequest without extra tracing too */
+        // const data = await apiRequest(config.endpoints.register, {method: 'POST', json: payload})
 
-        setToken(token)
-        onAuthed()
-      } catch (e) {
-        Sentry.captureException(e)
-        setErr(String(e?.message || e))
-      }
-    })
+      const token = extractToken(data)
+      if (!token) throw new Error('No token in register response (check backend response shape)')
+
+      setToken(token)
+      onAuthed()
+    } catch (e) {
+      setErr(String(e?.message || e))
+    }
   }
 
-  async function doLogin() {
+  async function login() {
     setErr('')
 
-    const payload = { email: log.email, password: log.password }
+    const payload = {email: log.email, password: log.password}
 
-    return Sentry.startNewTrace(async () => {
-      try {
-        const data = await Sentry.startSpan(
-          { name: 'auth.login', op: 'ui.action', forceTransaction: true },
-          async () => apiRequest(config.endpoints.login, { method: 'POST', json: payload }),
-        )
+    try {
+      /** here is good to create new Sentry trace for any action */
+      const data = await runSentryNewTrace('auth.login', 'action', () =>
+        apiRequest(config.endpoints.login, {method: 'POST', json: payload}),
+      )
 
-        const token = extractToken(data)
-        if (!token) throw new Error('No token in login response (check backend response shape)')
+      /** but you can simply call apiRequest without extra tracing too */
+        // const data = await apiRequest(config.endpoints.login, {method: 'POST', json: payload})
 
-        setToken(token)
-        onAuthed()
-      } catch (e) {
-        Sentry.captureException(e)
-        setErr(String(e?.message || e))
-      }
-    })
+      const token = extractToken(data)
+      if (!token) throw new Error('No token in login response (check backend response shape)')
+
+      setToken(token)
+      onAuthed()
+    } catch (e) {
+      setErr(String(e?.message || e))
+    }
   }
 
   return (
@@ -112,7 +121,7 @@ export default function Auth({ onAuthed }) {
             <input
               style={styles.input}
               value={reg.name}
-              onChange={(e) => setReg((p) => ({ ...p, name: e.target.value }))}
+              onChange={(e) => setReg((p) => ({...p, name: e.target.value}))}
             />
           </div>
 
@@ -121,7 +130,7 @@ export default function Auth({ onAuthed }) {
             <input
               style={styles.input}
               value={reg.email}
-              onChange={(e) => setReg((p) => ({ ...p, email: e.target.value }))}
+              onChange={(e) => setReg((p) => ({...p, email: e.target.value}))}
             />
           </div>
 
@@ -131,7 +140,7 @@ export default function Auth({ onAuthed }) {
               style={styles.input}
               type="password"
               value={reg.password}
-              onChange={(e) => setReg((p) => ({ ...p, password: e.target.value }))}
+              onChange={(e) => setReg((p) => ({...p, password: e.target.value}))}
             />
           </div>
 
@@ -141,11 +150,11 @@ export default function Auth({ onAuthed }) {
               style={styles.input}
               inputMode="numeric"
               value={reg.age}
-              onChange={(e) => setReg((p) => ({ ...p, age: e.target.value }))}
+              onChange={(e) => setReg((p) => ({...p, age: e.target.value}))}
             />
           </div>
 
-          <button style={{ ...styles.btn, backgroundColor: '#28a745', color: '#fff' }} onClick={doRegister}>
+          <button style={{...styles.btn, backgroundColor: '#28a745', color: '#fff'}} onClick={register}>
             Register
           </button>
         </>
@@ -156,7 +165,7 @@ export default function Auth({ onAuthed }) {
             <input
               style={styles.input}
               value={log.email}
-              onChange={(e) => setLog((p) => ({ ...p, email: e.target.value }))}
+              onChange={(e) => setLog((p) => ({...p, email: e.target.value}))}
             />
           </div>
 
@@ -166,11 +175,11 @@ export default function Auth({ onAuthed }) {
               style={styles.input}
               type="password"
               value={log.password}
-              onChange={(e) => setLog((p) => ({ ...p, password: e.target.value }))}
+              onChange={(e) => setLog((p) => ({...p, password: e.target.value}))}
             />
           </div>
 
-          <button style={{ ...styles.btn, backgroundColor: '#28a745', color: '#fff' }} onClick={doLogin}>
+          <button style={{...styles.btn, backgroundColor: '#28a745', color: '#fff'}} onClick={login}>
             Login
           </button>
         </>

@@ -10,7 +10,6 @@ export function initSentry() {
 
   if (!dsn) {
     // keep app working even if env is missing
-    // (but you won't see Sentry events)
     console.warn('[sentry] VITE_SENTRY_DSN is not set')
     return
   }
@@ -18,10 +17,17 @@ export function initSentry() {
   Sentry.init({
     dsn,
     tracesSampleRate: 1.0,
+    tracePropagationTargets: [
+      // Important !, must set the correct API origin here
+      new URL(config.apiUrl).origin,
+    ],
     integrations: [
       Sentry.browserTracingIntegration({
         instrumentPageLoad: false,
         instrumentNavigation: false,
+        // idleTimeout: 200,        // default 1000
+        // childSpanTimeout: 1000,  // default 15000
+        // finalTimeout: 5000,      // default 30000
       }),
     ],
   })

@@ -1,4 +1,3 @@
-import * as Sentry from '@sentry/react'
 import { config } from './config.js'
 
 /**
@@ -12,47 +11,31 @@ export async function apiRequest(path, opts = {}) {
   const method = opts.method || 'GET'
   const url = config.apiUrl + path
 
-  return Sentry.startSpan(
-    { name: `http ${method} ${path}`, op: 'http.client', forceTransaction: true },
-    async () => {
-      const td = (Sentry.getTraceData && Sentry.getTraceData()) || {}
-      const sentryTrace = td['sentry-trace'] || ''
-      const baggage = td.baggage || ''
+  const headers = {
+    'content-type': 'application/json',
+  }
 
-      /** @type {Record<string, string>} */
-      const headers = {
-        'content-type': 'application/json',
-      }
+  // auth
+  if (opts.token) headers.authorization = `Bearer ${opts.token}`
 
-      // trace propagation to BE
-      if (sentryTrace) headers['sentry-trace'] = sentryTrace
-      if (baggage) headers['baggage'] = baggage
+  const res = await fetch(url, {
+    method,
+    headers,
+    body: opts.json ? JSON.stringify(opts.json) : undefined,
+  })
 
-      // auth
-      if (opts.token) headers.authorization = `Bearer ${opts.token}`
+  const text = await res.text()
+  let data
 
-      const res = await fetch(url, {
-        method,
-        headers,
-        body: opts.json ? JSON.stringify(opts.json) : undefined,
-      })
+  try {
+    data = text ? JSON.parse(text) : null
+  } catch {
+    data = text
+  }
 
-      const text = await res.text()
-      let data = null
-      try {
-        data = text ? JSON.parse(text) : null
-      } catch {
-        data = text
-      }
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status} ${res.statusText}`)
+  }
 
-      if (!res.ok) {
-        const err = new Error(`HTTP ${res.status} ${res.statusText}`)
-        // attach response info for debugging
-        Sentry.setContext('http_error', { url, method, status: res.status, body: data })
-        throw err
-      }
-
-      return data
-    },
-  )
+  return data
 }
