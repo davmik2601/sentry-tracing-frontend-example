@@ -26,12 +26,28 @@ export default function WsDemo({onLogout}) {
   const wsRef = useRef(null)
   const logRef = useRef(null)
   const [connected, setConnected] = useState(false)
-  const [logText, setLogText] = useState('Open this app in browser, click Connect.\n')
-
+  const [logs, setLogs] = useState([
+    {text: 'Open this app in browser, click Connect.', type: 'info'},
+  ])
   const WS_URL = useMemo(() => config.wsUrl, [])
 
   function log(...args) {
-    setLogText((prev) => prev + args.map(String).join(' ') + '\n')
+    const text = args.map(String).join(' ')
+    let type = 'client'
+    if (text.startsWith('[message]')) type = 'response'
+    else if (text.startsWith('[error]')) type = 'error'
+    else if (text.startsWith('[warn]')) type = 'warn'
+
+
+    setLogs((prev) => [...prev, {text, type}])
+  }
+
+  function getColorOfText(type) {
+    if (type === 'response') return '#00ff00'
+    if (type === 'client') return '#4dbaea'
+    if (type === 'warn') return '#eece00'
+    if (type === 'error') return '#bb1313'
+    return '#ccc'
   }
 
   useEffect(() => {
@@ -39,7 +55,7 @@ export default function WsDemo({onLogout}) {
     if (logRef.current) {
       logRef.current.scrollTop = logRef.current.scrollHeight
     }
-  }, [logText])
+  }, [logs])
 
   useEffect(() => {
     // cleanup on unmount
@@ -164,8 +180,18 @@ export default function WsDemo({onLogout}) {
       </div>
 
       <pre id="log" ref={logRef} style={styles.pre}>
-        {logText}
-      </pre>
+  {logs.map((l, i) => (
+    <span
+      key={i}
+      style={{
+        display: 'block',
+        color: getColorOfText(l.type),
+      }}
+    >
+      {l.text}
+    </span>
+  ))}
+</pre>
     </div>
   )
 }
