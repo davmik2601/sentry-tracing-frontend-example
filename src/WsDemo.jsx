@@ -1,12 +1,13 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, {useEffect, useMemo, useRef, useState} from 'react'
 import * as Sentry from '@sentry/react'
-import { config } from './config.js'
-import { getToken, clearToken } from './auth-storage.js'
+import {config} from './config.js'
+import {getToken, clearToken} from './auth-storage.js'
+import {runSentryNewTraceSync} from './helpers/run-sentry-new-trace.js'
 
 const styles = {
-  page: { fontFamily: 'sans-serif', padding: 12 },
-  row: { marginBottom: 10 },
-  btn: { margin: '6px 6px 6px 0', padding: '6px 11px' },
+  page: {fontFamily: 'sans-serif', padding: 12},
+  row: {marginBottom: 10},
+  btn: {margin: '6px 6px 6px 0', padding: '6px 11px'},
   pre: {
     background: '#111', color: '#0f0', padding: 10, borderRadius: 8,
     maxWidth: 700, height: 260, overflow: 'auto', whiteSpace: 'pre-wrap',
@@ -21,7 +22,7 @@ function getSentryHeadersForWs() {
   }
 }
 
-export default function WsDemo({ onLogout }) {
+export default function WsDemo({onLogout}) {
   const wsRef = useRef(null)
   const logRef = useRef(null)
   const [connected, setConnected] = useState(false)
@@ -45,7 +46,8 @@ export default function WsDemo({ onLogout }) {
     return () => {
       try {
         if (wsRef.current) wsRef.current.close()
-      } catch {}
+      } catch {
+      }
       wsRef.current = null
     }
   }, [])
@@ -60,9 +62,9 @@ export default function WsDemo({ onLogout }) {
     const token = getToken()
 
     Sentry.startSpan(
-      { name: 'ws connect', op: 'ws.connect', forceTransaction: true },
+      {name: 'ws connect', op: 'ws.connect', forceTransaction: true},
       () => {
-        const { sentryTrace, baggage } = getSentryHeadersForWs()
+        const {sentryTrace, baggage} = getSentryHeadersForWs()
 
         const url =
           WS_URL + '/demo' +
@@ -115,27 +117,22 @@ export default function WsDemo({ onLogout }) {
       return
     }
 
-    // exactly like your HTML: new trace for every click
-    Sentry.startNewTrace(() => {
-      Sentry.startSpan(
-        { name: `ws.send.${type}`, op: 'ws.send', forceTransaction: true },
-        (span) => {
-          const ctx = span.spanContext()
-          const sentryTrace = `${ctx.traceId}-${ctx.spanId}-1`
-          const baggage = ''
+    runSentryNewTraceSync(`ws.send.${type}`, 'ws.send', (span) => {
+      const ctx = span.spanContext()
+      const sentryTrace = `${ctx.traceId}-${ctx.spanId}-1`
+      const baggage = ''
 
-          ws.send(JSON.stringify({ type, payload, _trace: { sentryTrace, baggage } }))
+      ws.send(JSON.stringify({type, payload, _trace: {sentryTrace, baggage}}))
 
-          log('[sent]', type, sentryTrace ? `(trace=${sentryTrace})` : '')
-        },
-      )
+      log('[sent]', type, sentryTrace ? `(trace=${sentryTrace})` : '')
     })
   }
 
   function logout() {
     try {
       if (wsRef.current) wsRef.current.close()
-    } catch {}
+    } catch {
+    }
     clearToken()
     onLogout()
   }
@@ -154,14 +151,14 @@ export default function WsDemo({ onLogout }) {
         <button style={styles.btn} onClick={() => send('ping', null)} disabled={!connected}>
           Send ping
         </button>
-        <button style={styles.btn} onClick={() => send('work', { ms: 800 })} disabled={!connected}>
+        <button style={styles.btn} onClick={() => send('work', {ms: 800})} disabled={!connected}>
           Send work (slow)
         </button>
         <button style={styles.btn} onClick={() => send('boom', null)} disabled={!connected}>
           Send boom (error)
         </button>
 
-        <button style={{ ...styles.btn, color: '#888', marginLeft: '30px' }} onClick={logout}>
+        <button style={{...styles.btn, color: '#888', marginLeft: '30px'}} onClick={logout}>
           Logout
         </button>
       </div>
