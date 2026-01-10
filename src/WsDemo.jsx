@@ -34,10 +34,10 @@ export default function WsDemo({onLogout}) {
   function log(...args) {
     const text = args.map(String).join(' ')
     let type = 'client'
-    if (text.startsWith('[message]')) type = 'response'
-    else if (text.startsWith('[error]')) type = 'error'
-    else if (text.startsWith('[warn]')) type = 'warn'
 
+    if (text.startsWith('[error]') || text.includes('"type":"err')) type = 'error'
+    else if (text.startsWith('[warn]') || text.includes('"type":"warn')) type = 'warn'
+    else if (text.startsWith('[message]')) type = 'response'
 
     setLogs((prev) => [...prev, {text, type}])
   }
@@ -46,7 +46,7 @@ export default function WsDemo({onLogout}) {
     if (type === 'response') return '#00ff00'
     if (type === 'client') return '#4dbaea'
     if (type === 'warn') return '#eece00'
-    if (type === 'error') return '#bb1313'
+    if (type === 'error') return '#ff2600'
     return '#ccc'
   }
 
