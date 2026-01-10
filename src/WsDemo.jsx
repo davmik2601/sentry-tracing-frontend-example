@@ -173,6 +173,18 @@ export default function WsDemo({onLogout}) {
         <button style={styles.btn} onClick={() => send('boom', null)} disabled={!connected}>
           Send boom (error)
         </button>
+        <button
+          style={styles.btn}
+          onClick={() =>
+            send('post.create', {
+              text: `Some Random Text ${Date.now()}}`,
+              isPublic: true,
+            })
+          }
+          disabled={!connected}
+        >
+          Create post
+        </button>
 
         <button style={{...styles.btn, color: '#888', marginLeft: '30px'}} onClick={logout}>
           Logout
