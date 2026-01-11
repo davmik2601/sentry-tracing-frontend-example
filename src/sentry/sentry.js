@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/react'
-import {config} from './config.js'
+import {config} from '../config.js'
 
 /**
  * Initialize Sentry once for the whole app.

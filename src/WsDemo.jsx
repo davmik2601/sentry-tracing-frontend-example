@@ -2,7 +2,7 @@ import React, {useEffect, useMemo, useRef, useState} from 'react'
 import * as Sentry from '@sentry/react'
 import {config} from './config.js'
 import {getToken, clearToken} from './auth-storage.js'
-import {runSentryNewTraceSync} from './helpers/run-sentry-new-trace.js'
+import {runSentryNewTraceSync} from './sentry/run-sentry-new-trace.js'
 
 const styles = {
   page: {fontFamily: 'sans-serif', padding: 12},
@@ -10,7 +10,7 @@ const styles = {
   btn: {margin: '6px 6px 6px 0', padding: '6px 11px'},
   pre: {
     background: '#111', color: '#0f0', padding: 10, borderRadius: 8,
-    maxWidth: 700, height: 260, overflow: 'auto', whiteSpace: 'pre-wrap',
+    maxWidth: 800, height: 400, overflow: 'auto', whiteSpace: 'pre-wrap',
   },
 }
 
@@ -197,6 +197,7 @@ export default function WsDemo({onLogout}) {
       key={i}
       style={{
         display: 'block',
+        margin: '3px 0 0',
         color: getColorOfText(l.type),
       }}
     >

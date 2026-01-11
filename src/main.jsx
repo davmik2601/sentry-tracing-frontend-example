@@ -1,7 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
-import { initSentry } from './sentry.js'
+import { initSentry } from './sentry/sentry.js'
 
 initSentry()
 

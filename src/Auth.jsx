@@ -2,7 +2,7 @@ import React, {useState} from 'react'
 import {apiRequest} from './http.js'
 import {setToken} from './auth-storage.js'
 import {config} from './config.js'
-import {runSentryNewTrace} from './helpers/run-sentry-new-trace.js'
+import {runSentryNewTrace} from './sentry/run-sentry-new-trace.js'
 
 const styles = {
   page: {fontFamily: 'sans-serif', padding: 12, maxWidth: 520},
